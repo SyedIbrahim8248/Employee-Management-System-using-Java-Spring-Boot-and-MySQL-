@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enterprise Employee Management System</title>
+
+<style>
+:root {
+    --primary:#2563eb;
+    --dark:#172554;
+    --background:#f1f5f9;
+    --white:#fff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --success:#15803d;
+    --danger:#b91c1c;
+    --warning:#b45309;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+body{background:var(--background);color:var(--text)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0;border-radius:6px;padding:10px 14px;font-weight:600}
+button:disabled{opacity:.6;cursor:not-allowed}
+input,select,textarea{padding:10px;border:1px solid #cbd5e1;border-radius:6px;width:100%;background:white}
+input:focus,select:focus,textarea:focus{outline:2px solid #bfdbfe;border-color:var(--primary)}
+header{background:var(--dark);color:white;padding:20px 4%;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+header p{color:#cbd5e1;margin-top:6px;font-size:13px}
+.layout{display:flex;min-height:calc(100vh - 80px)}
+.sidebar{width:225px;background:#fff;padding:20px 12px;border-right:1px solid var(--border);flex-shrink:0}
+.sidebar button{width:100%;text-align:left;margin:3px 0;background:white;color:#475569}
+.sidebar button.active,.sidebar button:hover{background:#dbeafe;color:#1d4ed8}
+.main{flex:1;min-width:0;padding:25px}
+.page{display:none}
+.page.active{display:block}
+.page-title{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.page-title p{color:var(--muted);margin-top:6px;font-size:14px}
+.btn-primary{background:var(--primary);color:white}
+.btn-success{background:#059669;color:white}
+.btn-danger{background:#fee2e2;color:var(--danger)}
+.btn-warning{background:#fef3c7;color:var(--warning)}
+.btn-light{background:#e2e8f0;color:#334155}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:22px}
+.card,.panel{background:white;border:1px solid var(--border);border-radius:10px;padding:20px;box-shadow:0 2px 8px #00000005}
+.card h3{font-size:13px;color:var(--muted);margin-bottom:12px}
+.card p{font-size:27px;font-weight:700;overflow-wrap:anywhere}
+.panel{margin-bottom:20px}
+.panel h3{margin-bottom:15px}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.filters>*{width:auto;min-width:150px;flex:1}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:750px}
+th,td{padding:13px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+th{background:#f8fafc;color:#475569}
+.badge{display:inline-block;padding:5px 9px;border-radius:20px;background:#dcfce7;color:#166534;font-size:11px;font-weight:bold}
+.badge.inactive,.badge.rejected,.badge.absent{background:#fee2e2;color:#991b1b}
+.badge.pending,.badge.leave,.badge.warning{background:#fef3c7;color:#92400e}
+.badge.info{background:#dbeafe;color:#1d4ed8}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font-size:13px;font-weight:600}
+.field.full{grid-column:1/-1}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.modal{display:none;position:fixed;inset:0;background:#0f172a99;z-index:100;align-items:center;justify-content:center;padding:15px}
+.modal.show{display:flex}
+.modal-box{width:100%;max-width:650px;max-height:92vh;overflow:auto;background:white;padding:25px;border-radius:12px}
+.modal-box h2{margin-bottom:20px}
+.notice{padding:12px;border-radius:6px;margin-bottom:15px;background:#dbeafe;color:#1e40af;display:none;overflow-wrap:anywhere}
+.notice.show{display:block}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.actions{display:flex;gap:5px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:13px}
+.progress{height:8px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin-top:10px}
+.progress div{height:100%;background:var(--primary)}
+.rule{padding:13px 0;border-bottom:1px solid var(--border);line-height:1.6;font-size:14px}
+.rule:last-child{border-bottom:0}
+footer{text-align:center;color:var(--muted);padding:20px;font-size:12px}
+@media(max-width:1000px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sidebar{width:180px}}
+@media(max-width:650px){.layout{display:block}.sidebar{width:100%;display:flex;overflow:auto;border-right:0;border-bottom:1px solid var(--border);padding:8px}.sidebar button{white-space:nowrap;width:auto}.main{padding:15px}.grid-2{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.card{padding:14px}.card p{font-size:23px}}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>Enterprise HR Management</h1>
+        <p>Employee Records · Attendance · Leave · Payroll · Policies</p>
+    </div>
+    <div class="actions">
+        <button class="btn-light" onclick="exportAll()">Export Data</button>
+        <button class="btn-primary" onclick="openEmployee()">+ Add Employee</button>
+    </div>
+</header>
+
+<div class="layout">
+<aside class="sidebar" aria-label="Main navigation">
+    <button class="active" data-page="dashboard">▦ Dashboard</button>
+    <button data-page="employees">♙ Employees</button>
+    <button data-page="attendance">◷ Attendance</button>
+    <button data-page="leaves">▤ Leave Management</button>
+    <button data-page="payroll">₹ Payroll</button>
+    <button data-page="performance">★ Performance</button>
+    <button data-page="assets">▣ Company Assets</button>
+    <button data-page="policies">⚖ Policies & Rules</button>
+    <button data-page="reports">▥ Reports</button>
+    <button data-page="settings">⚙ Settings</button>
+</aside>
+
+<main class="main">
+
+<div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="page active">
+    <div class="page-title">
+        <div><h2>Dashboard</h2><p>Overview of workforce and HR activities.</p></div>
+        <span class="badge info" id="connectionStatus">DEMO MODE</span>
+    </div>
+
+    <div class="stats">
+        <div class="card"><h3>Total Employees</h3><p id="statEmployees">0</p></div>
+        <div class="card"><h3>Present Today</h3><p id="statPresent">0</p></div>
+        <div class="card"><h3>Pending Leave Requests</h3><p id="statLeaves">0</p></div>
+        <div class="card"><h3>Departments</h3><p id="statDepartments">0</p></div>
+    </div>
+
+    <div class="grid-2">
+        <div class="panel">
+            <h3>Department Distribution</h3>
+            <div id="departmentSummary"></div>
+        </div>
+        <div class="panel">
+            <h3>HR Action Summary</h3>
+            <div id="actionSummary"></div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Recently Added Employees</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Status</th></tr></thead>
+                <tbody id="recentEmployees"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- EMPLOYEES -->
+<section id="employees" class="page">
+    <div class="page-title">
+        <div><h2>Employee Management</h2><p>Maintain employee profiles and employment details.</p></div>
+        <button class="btn-primary" onclick="openEmployee()">+ Add Employee</button>
+    </div>
+
+    <div class="panel">
+        <div class="filters">
+            <input id="employeeSearch" placeholder="Search name, email or ID">
+            <select id="employeeDept"><option value="">All departments</option></select>
+            <select id="employeeStatus">
+                <option value="">All employment statuses</option>
+                <option>Active</option><option>On Leave</option><option>Inactive</option>
+            </select>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>ID</th><th>Employee</th><th>Contact</th><th>Department</th><th>Role</th><th>Joining Date</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="employeeTable"></tbody>
+            </table>
+        </div>
+        <p id="employeeEmpty" class="empty" hidden>No employee records found.</p>
+    </div>
+</section>
+
+<!-- ATTENDANCE -->
+<section id="attendance" class="page">
+    <div class="page-title">
+        <div><h2>Attendance Management</h2><p>Track daily attendance and working hours.</p></div>
+        <button class="btn-primary" onclick="openAttendance()">+ Record Attendance</button>
+    </div>
+    <div class="panel">
+        <div class="filters">
+            <input id="attendanceDateFilter" type="date">
+            <select id="attendanceStatusFilter">
+                <option value="">All attendance statuses</option>
+                <option>Present</option><option>Absent</option><option>Half Day</option><option>Work From Home</option>
+            </select>
+        </div>
+        <div class="table-wrap">
+            <table><thead><tr><th>Date</th><th>Employee</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="attendanceTable"></tbody></table>
+        </div>
+        <p id="attendanceEmpty" class="empty" hidden>No attendance records found.</p>
+    </div>
+</section>
+
+<!-- LEAVES -->
+<section id="leaves" class="page">
+    <div class="page-title">
+        <div><h2>Leave Management</h2><p>Review leave requests and record decisions.</p></div>
+        <button class="btn-primary" onclick="openLeave()">+ Apply Leave</button>
+    </div>
+    <div class="stats">
+        <div class="card"><h3>Pending</h3><p id="pendingLeaves">0</p></div>
+        <div class="card"><h3>Approved</h3><p id="approvedLeaves">0</p></div>
+        <div class="card"><h3>Rejected</h3><p id="rejectedLeaves">0</p></div>
+        <div class="card"><h3>Total Requests</h3><p id="totalLeaves">0</p></div>
+    </div>
+    <div class="panel">
+        <div class="table-wrap">
+            <table><thead><tr><th>Employee</th><th>Leave Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="leaveTable"></tbody></table>
+        </div>
+        <p id="leaveEmpty" class="empty" hidden>No leave requests found.</p>
+    </div>
+</section>
+
+<!-- PAYROLL -->
+<section id="payroll" class="page">
+    <div class="page-title">
+        <div><h2>Payroll Management</h2><p>Calculate illustrative salary components and maintain payroll records.</p></div>
+        <button class="btn-primary" onclick="openPayroll()">+ Add Payroll</button>
+    </div>
+    <div class="panel">
+        <p class="muted" style="margin-bottom:15px">Demo calculations only. Real payroll requires applicable tax, statutory deductions, company policy and professional review.</p>
+        <div class="table-wrap">
+            <table><thead><tr><th>Employee</th><th>Month</th><th>Basic Salary</th><th>Allowances</th><th>Deductions</th><th>Net Pay</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="payrollTable"></tbody></table>
+        </div>
+        <p id="payrollEmpty" class="empty" hidden>No payroll records found.</p>
+    </div>
+</section>
+
+<!-- PERFORMANCE -->
+<section id="performance" class="page">
+    <div class="page-title">
+        <div><h2>Performance Reviews</h2><p>Document employee goals, ratings and feedback.</p></div>
+        <button class="btn-primary" onclick="openPerformance()">+ Add Review</button>
+    </div>
+    <div class="panel">
+        <div class="table-wrap">
+            <table><thead><tr><th>Employee</th><th>Review Period</th><th>Rating / 5</th><th>Goals</th><th>Feedback</th><th>Actions</th></tr></thead>
+            <tbody id="performanceTable"></tbody></table>
+        </div>
+        <p id="performanceEmpty" class="empty" hidden>No performance reviews found.</p>
+    </div>
+</section>
+
+<!-- ASSETS -->
+<section id="assets" class="page">
+    <div class="page-title">
+        <div><h2>Company Assets</h2><p>Track equipment assigned to employees.</p></div>
+        <button class="btn-primary" onclick="openAsset()">+ Add Asset</button>
+    </div>
+    <div class="panel">
+        <div class="table-wrap">
+            <table><thead><tr><th>Asset ID</th><th>Asset</th><th>Category</th><th>Assigned To</th><th>Issue Date</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="assetTable"></tbody></table>
+        </div>
+        <p id="assetEmpty" class="empty" hidden>No assets registered.</p>
+    </div>
+</section>
+
+<!-- POLICIES -->
+<section id="policies" class="page">
+    <div class="page-title">
+        <div><h2>Company Policies & Rules</h2><p>Sample handbook topics for HR customization.</p></div>
+        <button class="btn-primary" onclick="openPolicy()">+ Add Policy</button>
+    </div>
+    <div class="panel">
+        <p class="muted">These are illustrative templates, not legal advice or universal company rules. Replace them with approved company policies and applicable local law.</p>
+        <div id="policyList"></div>
+    </div>
+</section>
+
+<!-- REPORTS -->
+<section id="reports" class="page">
+    <div class="page-title">
+        <div><h2>Reports & Data Export</h2><p>Export HR records for further analysis.</p></div>
+    </div>
+    <div class="grid-2">
+        <div class="panel"><h3>Employee Report</h3><p class="muted" style="margin-bottom:15px">Download employee directory as CSV.</p><button class="btn-primary" onclick="downloadCSV('employees')">Export Employees</button></div>
+        <div class="panel"><h3>Attendance Report</h3><p class="muted" style="margin-bottom:15px">Download attendance records as CSV.</p><button class="btn-primary" onclick="downloadCSV('attendance')">Export Attendance</button></div>
+        <div class="panel"><h3>Leave Report</h3><p class="muted" style="margin-bottom:15px">Download leave requests as CSV.</p><button class="btn-primary" onclick="downloadCSV('leaves')">Export Leaves</button></div>
+        <div class="panel"><h3>Payroll Report</h3><p class="muted" style="margin-bottom:15px">Download demo payroll records as CSV.</p><button class="btn-primary" onclick="downloadCSV('payroll')">Export Payroll</button></div>
+        <div class="panel"><h3>Full Data Backup</h3><p class="muted" style="margin-bottom:15px">Download all locally stored demo data as JSON.</p><button class="btn-success" onclick="exportAll()">Download Backup</button></div>
+        <div class="panel"><h3>Restore Backup</h3><p class="muted" style="margin-bottom:15px">Restore a previously exported JSON backup. This replaces local demo data.</p><input type="file" id="restoreFile" accept=".json,application/json"><button class="btn-warning" style="margin-top:10px" onclick="restoreBackup()">Restore JSON</button></div>
+    </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings" class="page">
+    <div class="page-title"><div><h2>System Settings</h2><p>Configure the demonstration environment.</p></div></div>
+    <div class="panel">
+        <h3>Backend Connection</h3>
+        <div class="field" style="max-width:650px">
+            <label for="apiUrl">Spring Boot API URL</label>
+            <input id="apiUrl" value="http://localhost:8080/api">
+        </div>
+        <p class="muted" style="margin:10px 0">Expected endpoints include /employees, /attendance, /leaves, /payroll, /performance and /assets. The demo uses browser storage; backend mode requires implementing and securing these endpoints.</p>
+        <div class="actions" style="justify-content:flex-start">
+            <button class="btn-primary" onclick="saveApiUrl()">Save API URL</button>
+            <button class="btn-light" onclick="testConnection()">Test Connection</button>
+        </div>
+    </div>
+    <div class="panel">
+        <h3>Demo Data Management</h3>
+        <p class="muted" style="margin-bottom:15px">Reset the sample records stored in this browser. This does not delete records from a remote backend.</p>
+        <button class="btn-danger" onclick="resetDemo()">Reset Demo Data</button>
+    </div>
+    <div class="panel">
+        <h3>Security Notice</h3>
+        <div class="rule">This single-file demo is not a secure production HR system.</div>
+        <div class="rule">Do not store real employee personal information, bank details, passwords, salary records or confidential documents in this demo.</div>
+        <div class="rule">Production deployment requires authentication, role-based authorization, server-side validation, audit logs, secure backups and access controls.</div>
+    </div>
+</section>
+
+</main>
+</div>
+
+<footer>Enterprise HR Management Demo · HTML · CSS · JavaScript · Backend integration requires a separately running Java service.</footer>
+
+<!-- Shared modal -->
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box">
+        <h2 id="modalTitle">Form</h2>
+        <form id="dataForm"><div id="formFields" class="form-grid"></div>
+            <div class="form-actions">
+                <button type="button" class="btn-light" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary" id="submitButton">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+/*
+ * EDUCATIONAL DEMO
+ * Records are stored in this browser's localStorage.
+ * This does NOT connect to MySQL automatically.
+ * A Java Spring Boot backend and secured APIs are required
+ * for real company use.
+ */
+
+const STORAGE_KEY = "enterpriseHRDemo_v1";
+const today = new Date().toISOString().slice(0,10);
+const defaultPolicies = [
+    {title:"Code of Conduct",text:"Employees should communicate professionally, treat colleagues respectfully and follow approved workplace conduct procedures."},
+    {title:"Attendance & Working Hours",text:"Follow the working schedule, record attendance accurately and use the approved process to report delays or absences."},
+    {title:"Leave & Holidays",text:"Submit leave requests through the approved process. Leave approval depends on company policy and applicable law."},
+    {title:"Information Security",text:"Use authorized systems, protect company credentials, report suspected incidents and never share confidential data without authorization."},
+    {title:"Anti-Harassment & Equal Opportunity",text:"Discrimination, harassment, retaliation and bullying should be prohibited and reported through the designated confidential reporting channel."},
+    {title:"Data Privacy",text:"Access employee and customer information only for authorized business purposes. Follow applicable privacy and retention requirements."},
+    {title:"Remote Work",text:"Follow approved remote-work arrangements, secure company devices and remain reachable during agreed working hours."},
+    {title:"Company Assets",text:"Use company equipment responsibly, protect it against loss and return it when requested or when employment ends."},
+    {title:"Expenses & Reimbursements",text:"Submit genuine business expenses with supporting documents and obtain approvals according to the company's reimbursement process."},
+    {title:"Performance & Grievances",text:"Use documented performance reviews and a fair grievance process. Do not treat these demo guidelines as a substitute for approved procedures."}
+];
+
+function initialData(){
+    return {
+        employees:[
+            {id:1001,name:"Rahul Sharma",email:"rahul@example.com",phone:"9876543210",department:"IT",role:"Software Developer",joiningDate:"2025-01-10",status:"Active",salary:45000},
+            {id:1002,name:"Priya Verma",email:"priya@example.com",phone:"9876543211",department:"HR",role:"HR Executive",joiningDate:"2025-03-15",status:"Active",salary:35000},
+            {id:1003,name:"Amit Kumar",email:"amit@example.com",phone:"9876543212",department:"Finance",role:"Accountant",joiningDate:"2024-11-20",status:"On Leave",salary:40000}
+        ],
+        attendance:[
+            {id:1,employeeId:1001,date:today,checkIn:"09:00",checkOut:"17:30",status:"Present"},
+            {id:2,employeeId:1002,date:today,checkIn:"09:15",checkOut:"17:30",status:"Present"}
+        ],
+        leaves:[
+            {id:1,employeeId:1002,type:"Casual",from:today,to:today,days:1,reason:"Personal work",status:"Pending"}
+        ],
+        payroll:[],
+        performance:[],
+        assets:[],
+        policies:defaultPolicies.map(p=>({...p}))
+    };
+}
+
+function loadData(){
+    try{
+        const raw=localStorage.getItem(STORAGE_KEY);
+        if(!raw)return initialData();
+        const parsed=JSON.parse(raw);
+        const base=initialData();
+        for(const key of Object.keys(base)){
+            if(!Array.isArray(parsed[key]))parsed[key]=base[key];
+        }
+        return parsed;
+    }catch{
+        return initialData();
+    }
+}
+
+let db=loadData();
+let currentForm=null;
+let editingRecordId=null;
+let noticeTimer=null;
+
+function persist(){
+    try{
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(db));
+        return true;
+    }catch{
+        notify("Could not save data. Browser storage may be full or unavailable.");
+        return false;
+    }
+}
+
+function notify(text){
+    const el=document.getElementById("notice");
+    el.textContent=text;
+    el.classList.add("show");
+    clearTimeout(noticeTimer);
+    noticeTimer=setTimeout(()=>el.classList.remove("show"),5000);
+}
+
+function esc(v){
+    return String(v??"").replace(/[&<>"']/g,c=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    })[c]);
+}
+
+function money(v){
+    return Number(v||0).toLocaleString("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
+}
+
+function nextId(key){
+    return db[key].length?Math.max(...db[key].map(x=>Number(x.id)||0))+1:1;
+}
+
+function employeeName(id){
+    const e=db.employees.find(x=>Number(x.id)===Number(id));
+    return e?e.name:"Unassigned / Deleted Employee";
+}
+
+function statusBadge(status){
+    let cls="";
+    if(["Inactive","Rejected","Absent"].includes(status))cls="inactive";
+    else if(["Pending","On Leave","Half Day"].includes(status))cls="pending";
+    else if(["Work From Home","Approved"].includes(status))cls="info";
+    return `<span class="badge ${cls}">${esc(status)}</span>`;
+}
+
+function setCellTable(id,rows,emptyId,messageText){
+    document.getElementById(id).innerHTML=rows;
+    const empty=document.getElementById(emptyId);
+    empty.hidden=Boolean(rows);
+    empty.textContent=messageText;
+}
+
+function switchPage(id){
+    document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));
+    document.querySelectorAll(".sidebar button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));
+    renderAll();
+}
+
+document.querySelectorAll(".sidebar button").forEach(button=>{
+    button.addEventListener("click",()=>switchPage(button.dataset.page));
+});
+
+function renderAll(){
+    renderDashboard();
+    renderEmployees();
+    renderAttendance();
+    renderLeaves();
+    renderPayroll();
+    renderPerformance();
+    renderAssets();
+    renderPolicies();
+    renderDepartmentOptions();
+}
+
+function renderDashboard(){
+    document.getElementById("statEmployees").textContent=db.employees.length;
+    document.getElementById("statPresent").textContent=db.attendance.filter(a=>a.date===today&&["Present","Work From Home"].includes(a.status)).length;
+    document.getElementById("statLeaves").textContent=db.leaves.filter(l=>l.status==="Pending").length;
+    document.getElementById("statDepartments").textContent=new Set(db.employees.map(e=>e.department).filter(Boolean)).size;
+
+    const counts={};
+    db.employees.forEach(e=>counts[e.department]=(counts[e.department]||0)+1);
+    const max=Math.max(1,...Object.values(counts));
+    document.getElementById("departmentSummary").innerHTML=
+        Object.keys(counts).length?Object.entries(counts).map(([name,n])=>`
+            <div style="margin:14px 0">
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(name)}</span><b>${n}</b></div>
+                <div class="progress"><div style="width:${n/max*100}%"></div></div>
+            </div>`).join(""):'<p class="empty">No departments available.</p>';
+
+    const pending=db.leaves.filter(l=>l.status==="Pending").length;
+    const todayRecords=db.attendance.filter(a=>a.date===today).length;
+    const active=db.employees.filter(e=>e.status==="Active").length;
+    document.getElementById("actionSummary").innerHTML=`
+        <div class="rule">Active employees <b style="float:right">${active}</b></div>
+        <div class="rule">Today's attendance entries <b style="float:right">${todayRecords}</b></div>
+        <div class="rule">Leave requests awaiting review <b style="float:right">${pending}</b></div>
+        <div class="rule">Registered company assets <b style="float:right">${db.assets.length}</b></div>`;
+
+    const recent=[...db.employees].slice(-5).reverse();
+    document.getElementById("recentEmployees").innerHTML=recent.map(e=>`
+        <tr><td>${esc(e.id)}</td><td>${esc(e.name)}</td><td>${esc(e.department)}</td><td>${statusBadge(e.status)}</td></tr>`).join("");
+}
+
+function renderDepartmentOptions(){
+    const select=document.getElementById("employeeDept");
+    const current=select.value;
+    const departments=[...new Set(db.employees.map(e=>e.department).filter(Boolean))].sort();
+    select.innerHTML='<option value="">All departments</option>'+departments.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
+    select.value=departments.includes(current)?current:"";
+}
+
+function renderEmployees(){
+    const q=(document.getElementById("employeeSearch")?.value||"").toLowerCase().trim();
+    const dept=document.getElementById("employeeDept")?.value||"";
+    const status=document.getElementById("employeeStatus")?.value||"";
+    const list=db.employees.filter(e=>
+        [e.name,e.email,e.id,e.role].some(v=>String(v||"").toLowerCase().includes(q))&&
+        (!dept||e.department===dept)&&(!status||e.status===status));
+    const html=list.map(e=>`<tr>
+        <td>${esc(e.id)}</td>
+        <td><b>${esc(e.name)}</b><br><span class="muted">${esc(e.email)}</span></td>
+        <td>${esc(e.phone||"—")}</td><td>${esc(e.department)}</td><td>${esc(e.role)}</td>
+        <td>${esc(e.joiningDate||"—")}</td><td>${statusBadge(e.status)}</td>
+        <td><div class="actions"><button class="btn-warning" onclick="editRecord('employees',${Number(e.id)})">Edit</button><button class="btn-danger" onclick="removeRecord('employees',${Number(e.id)})">Delete</button></div></td>
+    </tr>`).join("");
+    setCellTable("employeeTable",html,"employeeEmpty","No employee records found.");
+}
+
+document.getElementById("employeeSearch").addEventListener("input",renderEmployees);
+document.getElementById("employeeDept").addEventListener("change",renderEmployees);
+document.getElementById("employeeStatus").addEventListener("change",renderEmployees);
+
+function hoursBetween(a,b){
+    if(!a||!b)return "—";
+    const [h1,m1]=a.split(":").map(Number);
+    const [h2,m2]=b.split(":").map(Number);
+    let minutes=h2*60+m2-(h1*60+m1);
+    if(minutes<0)minutes+=1440;
+    return (minutes/60).toFixed(2);
+}
+
+function renderAttendance(){
+    const date=document.getElementById("attendanceDateFilter").value;
+    const status=document.getElementById("attendanceStatusFilter").value;
+    const list=db.attendance.filter(a=>(!date||a.date===date)&&(!status||a.status===status));
+    const html=list.map(a=>`<tr>
+        <td>${esc(a.date)}</td><td>${esc(employeeName(a.employeeId))}</td>
+        <td>${esc(a.checkIn||"—")}</td><td>${esc(a.checkOut||"—")}</td>
+        <td>${hoursBetween(a.checkIn,a.checkOut)}</td><td>${statusBadge(a.status)}</td>
+        <td><button class="btn-danger" onclick="removeRecord('attendance',${Number(a.id)})">Delete</button></td>
+    </tr>`).join("");
+    setCellTable("attendanceTable",html,"attendanceEmpty","No attendance records found.");
+}
+
+document.getElementById("attendanceDateFilter").value=today;
+document.getElementById("attendanceDateFilter").addEventListener("change",renderAttendance);
+document.getElementById("attendanceStatusFilter").addEventListener("change",renderAttendance);
+
+function renderLeaves(){
+    const counts={Pending:0,Approved:0,Rejected:0};
+    db.leaves.forEach(l=>counts[l.status]=(counts[l.status]||0)+1);
+    document.getElementById("pendingLeaves").textContent=counts.Pending||0;
+    document.getElementById("approvedLeaves").textContent=counts.Approved||0;
+    document.getElementById("rejectedLeaves").textContent=counts.Rejected||0;
+    document.getElementById("totalLeaves").textContent=db.leaves.length;
+
+    const html=db.leaves.map(l=>`<tr>
+        <td>${esc(employeeName(l.employeeId))}</td><td>${esc(l.type)}</td>
+        <td>${esc(l.from)}</td><td>${esc(l.to)}</td><td>${esc(l.days)}</td>
+        <td>${esc(l.reason)}</td><td>${statusBadge(l.status)}</td>
+        <td><div class="actions">
+            ${l.status==="Pending"?`<button class="btn-success" onclick="decideLeave(${Number(l.id)},'Approved')">Approve</button><button class="btn-danger" onclick="decideLeave(${Number(l.id)},'Rejected')">Reject</button>`:""}
+            <button class="btn-light" onclick="removeRecord('leaves',${Number(l.id)})">Delete</button>
+        </div></td>
+    </tr>`).join("");
+    setCellTable("leaveTable",html,"leaveEmpty","No leave requests found.");
+}
+
+function decideLeave(id,status){
+    const leave=db.leaves.find(l=>Number(l.id)===Number(id));
+    if(!leave||leave.status!=="Pending")return;
+    if(!confirm(`${status} this leave request?`))return;
+    leave.status=status;
+    if(persist()){renderAll();notify("Leave request marked "+status+".");}
+}
+
+function renderPayroll(){
+    const html=db.payroll.map(p=>`<tr>
+        <td>${esc(employeeName(p.employeeId))}</td><td>${esc(p.month)}</td>
+        <td>${money(p.basic)}</td><td>${money(p.allowances)}</td><td>${money(p.deductions)}</td>
+        <td><b>${money(Number(p.basic)+Number(p.allowances)-Number(p.deductions))}</b></td>
+        <td>${statusBadge(p.status)}</td>
+        <td><button class="btn-danger" onclick="removeRecord('payroll',${Number(p.id)})">Delete</button></td>
+    </tr>`).join("");
+    setCellTable("payrollTable",html,"payrollEmpty","No payroll records found.");
+}
+
+function renderPerformance(){
+    const html=db.performance.map(p=>`<tr>
+        <td>${esc(employeeName(p.employeeId))}</td><td>${esc(p.period)}</td>
+        <td>${esc(p.rating)} / 5</td><td>${esc(p.goals)}</td><td>${esc(p.feedback)}</td>
+        <td><button class="btn-danger" onclick="removeRecord('performance',${Number(p.id)})">Delete</button></td>
+    </tr>`).join("");
+    setCellTable("performanceTable",html,"performanceEmpty","No performance reviews found.");
+}
+
+function renderAssets(){
+    const html=db.assets.map(a=>`<tr>
+        <td>${esc(a.assetCode)}</td><td>${esc(a.name)}</td><td>${esc(a.category)}</td>
+        <td>${esc(employeeName(a.employeeId))}</td><td>${esc(a.issueDate||"—")}</td>
+        <td>${statusBadge(a.status)}</td>
+        <td><button class="btn-warning" onclick="editRecord('assets',${Number(a.id)})">Edit</button> <button class="btn-danger" onclick="removeRecord('assets',${Number(a.id)})">Delete</button></td>
+    </tr>`).join("");
+    setCellTable("assetTable",html,"assetEmpty","No assets registered.");
+}
+
+function renderPolicies(){
+    document.getElementById("policyList").innerHTML=db.policies.map((p,i)=>`
+        <div class="rule"><b>${esc(p.title)}</b>
+            <p style="margin-top:7px">${esc(p.text)}</p>
+            <button class="btn-warning" style="margin-top:9px" onclick="editRecord('policies',${Number(p.id??i+1)})">Edit</button>
+            <button class="btn-danger" style="margin-top:9px" onclick="removeRecord('policies',${Number(p.id??i+1)})">Delete</button>
+        </div>`).join("");
+}
+
+/* Reusable form builder */
+function field(name,label,type="text",required=true,options=null,value="",full=false){
+    let control;
+    if(options){
+        control=`<select id="f_${name}" ${required?"required":""}>${options.map(o=>`<option value="${esc(o)}" ${String(o)===String(value)?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+    }else if(type==="textarea"){
+        control=`<textarea id="f_${name}" rows="3" ${required?"required":""}>${esc(value)}</textarea>`;
+    }else{
+        control=`<input id="f_${name}" type="${type}" value="${esc(value)}" ${required?"required":""} ${type==="number"?'min="0" step="any"':""}>`;
+    }
+    return `<div class="field ${full?"full":""}"><label for="f_${name}">${esc(label)}</label>${control}</div>`;
+}
+
+function employeeOptions(){
+    return db.employees.map(e=>String(e.id)+"|"+e.name);
+}
+function employeeSelectOptions(selected){
+    const options=db.employees.map(e=>({value:String(e.id),label:e.name}));
+    return options;
+}
+
+function buildEmployeeSelect(name,label,selected,required=true){
+    return `<div class="field"><label for="f_${name}">${esc(label)}</label><select id="f_${name}" ${required?"required":""}>
+    <option value="">Select employee</option>${db.employees.map(e=>`<option value="${Number(e.id)}" ${Number(e.id)===Number(selected)?"selected":""}>${esc(e.name)} (#${Number(e.id)})</option>`).join("")}</select></div>`;
+}
+
+function openModal(title,kind,record=null){
+    currentForm=kind;
+    editingRecordId=record?record.id:null;
+    document.getElementById("modalTitle").textContent=title;
+    const f=record||{};
+    let html="";
+
+    if(kind==="employees"){
+        html=field("name","Full Name","text",true,null,f.name)+
+        field("email","Email","email",true,null,f.email)+
+        field("phone","Phone","tel",false,null,f.phone)+
+        field("department","Department","text",true,null,f.department)+
+        field("role","Job Title","text",true,null,f.role)+
+        field("joiningDate","Joining Date","date",true,null,f.joiningDate||today)+
+        field("status","Employment Status","text",true,["Active","On Leave","Inactive"],f.status||"Active")+
+        field("salary","Monthly Base Salary (₹)","number",true,null,f.salary||0);
+    }else if(kind==="attendance"){
+        html=buildEmployeeSelect("employeeId","Employee",f.employeeId)+
+        field("date","Attendance Date","date",true,null,f.date||today)+
+        field("checkIn","Check In","time",false,null,f.checkIn)+
+        field("checkOut","Check Out","time",false,null,f.checkOut)+
+        field("status","Attendance Status","text",true,["Present","Absent","Half Day","Work From Home"],f.status||"Present");
+    }else if(kind==="leaves"){
+        html=buildEmployeeSelect("employeeId","Employee",f.employeeId)+
+        field("type","Leave Type","text",true,["Casual","Sick","Annual","Unpaid","Other"],f.type||"Casual")+
+        field("from","From Date","date",true,null,f.from||today)+
+        field("to","To Date","date",true,null,f.to||today)+
+        field("reason","Reason","text",true,null,f.reason,true);
+    }else if(kind==="payroll"){
+        html=buildEmployeeSelect("employeeId","Employee",f.employeeId)+
+        field("month","Payroll Month","month",true,null,f.month||today.slice(0,7))+
+        field("basic","Basic Pay (₹)","number",true,null,f.basic||0)+
+        field("allowances","Allowances (₹)","number",true,null,f.allowances||0)+
+        field("deductions","Deductions (₹)","number",true,null,f.deductions||0)+
+        field("status","Payroll Status","text",true,["Draft","Approved","Paid"],f.status||"Draft");
+    }else if(kind==="performance"){
+        html=buildEmployeeSelect("employeeId","Employee",f.employeeId)+
+        field("period","Review Period","text",true,null,f.period||new Date().getFullYear())+
+        field("rating","Rating (1–5)","number",true,null,f.rating||3)+
+        field("goals","Goals","textarea",true,null,f.goals,true)+
+        field("feedback","Feedback","textarea",true,null,f.feedback,true);
+    }else if(kind==="assets"){
+        html=field("assetCode","Asset Code","text",true,null,f.assetCode||"ASSET-"+nextId("assets"))+
+        field("name","Asset Name","text",true,null,f.name)+
+        field("category","Category","text",true,["Laptop","Monitor","Phone","Access Card","Other"],f.category||"Laptop")+
+        buildEmployeeSelect("employeeId","Assigned Employee",f.employeeId,false)+
+        field("issueDate","Issue Date","date",false,null,f.issueDate||today)+
+        field("status","Asset Status","text",true,["Assigned","Available","Under Repair","Returned"],f.status||"Assigned");
+    }else if(kind==="policies"){
+        html=field("title","Policy Title","text",true,null,f.title,true)+
+        field("text","Policy Details","textarea",true,null,f.text,true);
+    }
+
+    document.getElementById("formFields").innerHTML=html;
+    document.getElementById("modal").classList.add("show");
+}
+
+function closeModal(){
+    document.getElementById("modal").classList.remove("show");
+    currentForm=null;
+    editingRecordId=null;
+}
+
+function openEmployee(){openModal("Add Employee","employees")}
+function openAttendance(){openModal("Record Attendance","attendance")}
+function openLeave(){openModal("Apply for Leave","leaves")}
+function openPayroll(){openModal("Add Payroll Record","payroll")}
+function openPerformance(){openModal("Add Performance Review","performance")}
+function openAsset(){openModal("Register Company Asset","assets")}
+function openPolicy(){openModal("Add Company Policy","policies")}
+
+function editRecord(kind,id){
+    const record=db[kind].find((r,i)=>Number(r.id??i+1)===Number(id));
+    if(record)openModal("Edit "+kind.slice(0,-1),kind,record);
+}
+
+function getFormRecord(kind){
+    const value=name=>document.getElementById("f_"+name)?.value??"";
+    if(kind==="employees"){
+        return {name:value("name").trim(),email:value("email").trim(),phone:value("phone").trim(),department:value("department").trim(),role:value("role").trim(),joiningDate:value("joiningDate"),status:value("status"),salary:Number(value("salary"))};
+    }
+    if(kind==="attendance"){
+        return {employeeId:Number(value("employeeId")),date:value("date"),checkIn:value("checkIn"),checkOut:value("checkOut"),status:value("status")};
+    }
+    if(kind==="leaves"){
+        const from=value("from"),to=value("to");
+        if(from&&to&&to<from)throw Error("Leave end date must not be earlier than start date.");
+        const days=from&&to?Math.round((new Date(to+"T00:00:00")-new Date(from+"T00:00:00"))/86400000)+1:0;
+        return {employeeId:Number(value("employeeId")),type:value("type"),from,to,days,reason:value("reason").trim(),status:"Pending"};
+    }
+    if(kind==="payroll"){
+        const basic=Number(value("basic")),allowances=Number(value("allowances")),deductions=Number(value("deductions"));
+        if(deductions>basic+allowances)throw Error("Deductions cannot exceed gross pay in this demo.");
+        return {employeeId:Number(value("employeeId")),month:value("month"),basic,allowances,deductions,status:value("status")};
+    }
+    if(kind==="performance"){
+        const rating=Number(value("rating"));
+        if(rating<1||rating>5)throw Error("Rating must be between 1 and 5.");
+        return {employeeId:Number(value("employeeId")),period:value("period"),rating,goals:value("goals").trim(),feedback:value("feedback").trim()};
+    }
+    if(kind==="assets"){
+        return {assetCode:value("assetCode").trim(),name:value("name").trim(),category:value("category"),employeeId:value("employeeId")?Number(value("employeeId")):null,issueDate:value("issueDate"),status:value("status")};
+    }
+    if(kind==="policies")return {title:value("title").trim(),text:value("text").trim()};
+    throw Error("Unknown form type.");
+}
+
+document.getElementById("dataForm").addEventListener("submit",event=>{
+    event.preventDefault();
+    if(!currentForm)return;
+    try{
+        const kind=currentForm;
+        const record=getFormRecord(kind);
+
+        if(kind==="employees"&&db.employees.some(e=>e.email.toLowerCase()===record.email.toLowerCase()&&Number(e.id)!==Number(editingRecordId))){
+            throw Error("An employee with this email already exists.");
+        }
+        if(kind==="attendance"&&db.attendance.some(a=>Number(a.employeeId)===record.employeeId&&a.date===record.date&&Number(a.id)!==Number(editingRecordId))){
+            throw Error("Attendance for this employee and date already exists.");
+        }
+        if(kind==="payroll"&&db.payroll.some(p=>Number(p.employeeId)===record.employeeId&&p.month===record.month&&Number(p.id)!==Number(editingRecordId))){
+            throw Error("Payroll for this employee and month already exists.");
+        }
+        if(kind==="assets"&&db.assets.some(a=>a.assetCode.toLowerCase()===record.assetCode.toLowerCase()&&Number(a.id)!==Number(editingRecordId))){
+            throw Error("This asset code already exists.");
+        }
+
+        if(editingRecordId!==null){
+            const index=db[kind].findIndex((r,i)=>Number(r.id??i+1)===Number(editingRecordId));
+            if(index<0)throw Error("Record not found.");
+            db[kind][index]={...db[kind][index],...record};
+        }else{
+            record.id=nextId(kind);
+            db[kind].push(record);
+        }
+
+        if(!persist())return;
+        closeModal();
+        renderAll();
+        notify("Record saved successfully.");
+    }catch(error){
+        notify(error.message||"Unable to save record.");
+    }
+});
+
+function removeRecord(kind,id){
+    const record=db[kind].find((r,i)=>Number(r.id??i+1)===Number(id));
+    if(!record||!confirm("Delete this record?"))return;
+    db[kind]=db[kind].filter((r,i)=>Number(r.id??i+1)!==Number(id));
+    if(persist()){
+        renderAll();
+        notify("Record deleted.");
+    }
+}
+
+document.getElementById("modal").addEventListener("click",e=>{
+    if(e.target===e.currentTarget)closeModal();
+});
+document.addEventListener("keydown",e=>{
+    if(e.key==="Escape")closeModal();
+});
+
+/* CSV export */
+function csvCell(value){
+    let s=String(value??"");
+    if(/^\s*[=+\-@]/.test(s))s="'"+s;
+    return '"'+s.replace(/"/g,'""')+'"';
+}
+function downloadCSV(key){
+    const rows=db[key]||[];
+    if(!rows.length){notify("No records to export.");return;}
+    const headers=[...new Set(rows.flatMap(Object.keys))];
+    const csv=[headers,...rows.map(r=>headers.map(h=>r[h]??""))]
+        .map(row=>row.map(csvCell).join(",")).join("\r\n");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=key+"-report.csv";a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportAll(){
+    const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download="hr-demo-backup.json";a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function restoreBackup(){
+    const file=document.getElementById("restoreFile").files[0];
+    if(!file){notify("Choose a JSON backup first.");return;}
+    const reader=new FileReader();
+    reader.onload=()=>{
+        try{
+            const parsed=JSON.parse(reader.result);
+            const keys=["employees","attendance","leaves","payroll","performance","assets","policies"];
+            if(!keys.every(k=>Array.isArray(parsed[k])))throw Error("Invalid backup structure.");
+            if(!confirm("Replace all current demo records with this backup?"))return;
+            const previous=db;
+            db=Object.fromEntries(keys.map(k=>[k,parsed[k]]));
+            if(!persist()){db=previous;return;}
+            renderAll();notify("Backup restored.");
+        }catch(error){notify("Restore failed: "+error.message);}
+    };
+    reader.readAsText(file);
+}
+
+/* Settings: demo only. A URL is not a backend implementation. */
+function saveApiUrl(){
+    const value=document.getElementById("apiUrl").value.trim().replace(/\/+$/,"");
+    if(!/^https?:\/\/.+/i.test(value)){notify("Enter a valid HTTP or HTTPS API URL.");return;}
+    localStorage.setItem("hrDemoApiUrl",value);
+    notify("API URL saved in this browser. The demo still uses local storage.");
+}
+async function testConnection(){
+    const value=document.getElementById("apiUrl").value.trim().replace(/\/+$/,"");
+    try{
+        const response=await fetch(value+"/employees");
+        if(!response.ok)throw Error("HTTP "+response.status);
+        notify("Employee API is reachable. This demo does not automatically synchronize its records.");
+    }catch(error){
+        notify("API connection failed. Check the server, URL and CORS settings.");
+    }
+}
+function resetDemo(){
+    if(!confirm("Reset all local demo data to the sample records?"))return;
+    db=initialData();
+    if(persist()){renderAll();notify("Demo data reset.");}
+}
+
+const savedApi=localStorage.getItem("hrDemoApiUrl");
+if(savedApi)document.getElementById("apiUrl").value=savedApi;
+
+renderAll();
+</script>
+</body>
+</html> 
+
